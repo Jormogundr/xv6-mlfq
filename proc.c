@@ -283,6 +283,10 @@ scheduler(void)
       proc = p;
       switchuvm(p);
       p->state = RUNNING;
+      if (strncmp(p->name, "sh", 2) == 0 || strncmp(p->name, "spin", 4) == 0) {
+        cprintf("Process %s is of Process ID %d,  Queue Type %d, Quantum Size %d", p->name, p->pid, p->queuetype, p->quantumsize);
+        cprintf("\n");
+      }
       swtch(&cpu->scheduler, proc->context);
       switchkvm();
 
