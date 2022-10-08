@@ -339,7 +339,7 @@ scheduler(void)
         // It should have changed its p->state before coming back.
         proc = 0;
       }
-      
+
       // update queue occupancy count for procs that have finished
       if (p->state == ZOMBIE) {
         if (p->queuetype == 1) {
@@ -351,7 +351,6 @@ scheduler(void)
       }
     }
     release(&ptable.lock);
-
   }
 }
 
