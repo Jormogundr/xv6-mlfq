@@ -73,7 +73,7 @@ found:
   p->context = (struct context*)sp;
   memset(p->context, 0, sizeof *p->context);
   p->context->eip = (uint)forkret;
-
+  cprintf("Process %s %d has started \n", p->name, p->pid);
   return p;
 }
 
@@ -303,7 +303,6 @@ scheduler(void)
         p->quantumTime = 9;
       }
       else if (p->queuetype == 3 && p->quantumTime == 0) {
-        // check if proc can be boosted
         if (p->boosted < 3) {
           p->queuetype = 1;
           p->quantumTime = 1;
@@ -339,7 +338,7 @@ scheduler(void)
         // It should have changed its p->state before coming back.
         proc = 0;
       }
-      
+
       // update queue occupancy count for procs that have finished
       if (p->state == ZOMBIE) {
         if (p->queuetype == 1) {
