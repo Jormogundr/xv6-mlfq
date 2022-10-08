@@ -47,6 +47,10 @@ allocproc(void)
 found:
   p->state = EMBRYO;
   p->pid = nextpid++;
+  p->queuetype = 1;
+  p->quantumCounter = 0;
+  p->boosted = 0;
+  p->quantumTime = 1;
   release(&ptable.lock);
 
   // Allocate kernel stack.
@@ -271,28 +275,54 @@ scheduler(void)
     // Enable interrupts on this processor.
     sti();
 
-    // Loop over process table looking for process to run.
+    // Loop over process table looking for process to run. Each iteration is ~10 ms
     acquire(&ptable.lock);
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+      // select correct next proc to run
       if(p->state != RUNNABLE)
         continue;
-
-      // Switch to chosen process.  It is the process's job
-      // to release ptable.lock and then reacquire it
-      // before jumping back to us.
-      proc = p;
-      switchuvm(p);
-      p->state = RUNNING;
-      if (strncmp(p->name, "sh", 2) == 0 || strncmp(p->name, "spin", 4) == 0) {
-        cprintf("Process %s is of Process ID %d,  Queue Type %d, Quantum Size %d", p->name, p->pid, p->queuetype, p->quantumsize);
-        cprintf("\n");
+      if (p->queuetype == 1 && p->quantumTime == 0) {
+        p->queuetype = 2;
+        p->quantumTime = 3;
       }
-      swtch(&cpu->scheduler, proc->context);
-      switchkvm();
+      else if (p->queuetype == 2 && p->quantumTime == 0) {
+        p->queuetype = 3;
+        p->quantumTime = 9;
+      }
+      else if (p->queuetype == 3 && p->quantumTime == 0) {
+        // check if proc can be boosted
+        if (p->boosted < 3) {
+          p->queuetype = 1;
+          p->quantumTime = 1;
+          p->boosted++;
+        }
+        else {
+          p->quantumTime = 9;
+        }
+      }
 
-      // Process is done running for now.
-      // It should have changed its p->state before coming back.
-      proc = 0;
+      // check that process state hasn't changed and that the process still has quantum time
+      while (p->quantumTime > 0 && p->state != ZOMBIE) {
+        // set running proc
+        proc = p;
+        // Switch to chosen process.  It is the process's job
+        // to release ptable.lock and then reacquire it
+        // before jumping back to us.
+        switchuvm(p);
+        p->state = RUNNING;
+        swtch(&cpu->scheduler, proc->context);
+        switchkvm();
+
+        // output only should go here
+        if (strncmp(p->name, "sh", 2) == 0 || strncmp(p->name, "spin", 4) == 0) {
+          cprintf("Process %s %d has consumed 10 ms in Q%d \n", p->name, p->pid, p->queuetype);
+        }
+
+        p->quantumTime--;
+        // Process is done running for now.
+        // It should have changed its p->state before coming back.
+        proc = 0;
+      }
     }
     release(&ptable.lock);
 

@@ -67,8 +67,9 @@ struct proc {
   struct inode *cwd;           // Current directory
   char name[16];               // Process name (debugging)
   int queuetype;               // Queue number in rMLFQ
-  int quantumsize;             // Quantum size associated with queue in MLFQ -- added by Nate
-  int timerInterruptCount;     // Counter for timer intterupts for the process -- added by Nate
+  int quantumCounter;             // Quantum size associated with queue in MLFQ -- added by Nate
+  int boosted;
+  int quantumTime;
 };
 
 // Process memory is laid out contiguously, low addresses first:
