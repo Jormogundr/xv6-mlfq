@@ -49,7 +49,7 @@ found:
   p->pid = nextpid++;
   p->queuetype = 1;
   p->quantumCounter = 0;
-  p->boosted = 0;
+  p->rounds = 0;
   p->quantumTime = 1;
   release(&ptable.lock);
 
@@ -304,10 +304,10 @@ scheduler(void)
       }
       else if (p->queuetype == 3 && p->quantumTime == 0) {
         // check if proc can be boosted
-        if (p->boosted < 3) {
+        if (p->rounds == 3) {
           p->queuetype = 1;
           p->quantumTime = 1;
-          p->boosted++;
+          p->rounds = 0;
           q1occupied++;
         }
         else {
@@ -339,7 +339,7 @@ scheduler(void)
         // It should have changed its p->state before coming back.
         proc = 0;
       }
-
+      p->rounds++;
       // update queue occupancy count for procs that have finished
       if (p->state == ZOMBIE) {
         if (p->queuetype == 1) {
@@ -348,6 +348,7 @@ scheduler(void)
         if (p->queuetype == 2) {
           q2occupied--;
         }
+        break;
       }
     }
     release(&ptable.lock);

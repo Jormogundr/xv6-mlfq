@@ -68,7 +68,7 @@ struct proc {
   char name[16];               // Process name (debugging)
   int queuetype;               // Queue number in rMLFQ
   int quantumCounter;             // Quantum size associated with queue in MLFQ -- added by Nate
-  int boosted;
+  int rounds;
   int quantumTime;
 };
 
